@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Калькулятор Маны v5.6 — D&D 5e</title>
-
-    <!-- Favicon (иконка вкладки) -->
+    <title>Калькулятор Маны v5.7 — D&D 5e</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
-
     <style>
         :root {
             --bg: #0a0a14; --panel: #12122a; --accent: #7b2ff7; --accent2: #c084fc;
@@ -15,21 +12,18 @@
             --success: #4ade80; --border: #252545; --card: #181835; --radius: 14px;
             --safe-bottom: env(safe-area-inset-bottom, 10px);
         }
-
-        /* Светлая тема */
         .light-theme {
             --bg: #f5f5f5; --panel: #ffffff; --accent: #7b2ff7; --accent2: #5a2e9e;
             --gold: #b8860b; --text: #1a1a1a; --text2: #555555; --danger: #cc0000;
             --success: #2e7d32; --border: #e0e0e0; --card: #fafafa;
         }
-
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         body {
             background: var(--bg); color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh; padding: 12px 12px var(--safe-bottom);
-            font-size: 16px; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; user-select: none;
-            transition: background 0.2s, color 0.2s;
+            font-size: 16px; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased;
+            user-select: none; transition: background 0.2s, color 0.2s;
         }
         .container { max-width: 520px; margin: 0 auto; }
         .header { text-align:center; padding:18px; background:var(--panel); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:10px; }
@@ -101,24 +95,35 @@
         .saved-spell-actions { display:flex; gap:8px; margin-top:8px; justify-content:flex-end; }
         .saved-spell-actions button { background:var(--card); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:8px; font-size:0.8em; cursor:pointer; transition:0.2s; }
         .saved-spell-actions button:active { background:#2a2a40; }
-        .settings-panel { margin-top:10px; }
-        .settings-panel label { display:block; font-size:0.85em; color:var(--text2); margin-bottom:4px; }
-        .settings-panel select, .settings-panel input { margin-bottom:10px; }
         .profile-manager { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
         .profile-manager select { flex:1; }
         .profile-manager button { background:var(--card); border:1px solid var(--border); color:var(--text); padding:8px 14px; border-radius:8px; font-size:0.9em; cursor:pointer; }
+        .settings-top { margin-bottom:10px; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h1>✨ Калькулятор Маны ✨</h1>
-        <div class="sub">Магия Свободной Воли для D&D 5e<br>v5.6 · Настройки · Профили · Светлая/тёмная тема</div>
+        <div class="sub">Магия Свободной Воли для D&D 5e<br>v5.7 · Профили · Темы · Формула маны</div>
+    </div>
+
+    <!-- Настройки (вверху) -->
+    <div class="panel settings-panel settings-top">
+        <h2>⚙️ Настройки</h2>
+        <label>Тема</label>
+        <select id="themeSelect">
+            <option value="dark" selected>Тёмная</option>
+            <option value="light">Светлая</option>
+        </select>
+        <label>Формула маны</label>
+        <input type="text" id="manaFormulaInput" placeholder="level*3 + level*int">
+        <button id="applySettingsBtn" class="btn">Применить</button>
     </div>
 
     <!-- Профили персонажей -->
     <div class="panel">
-        <h2>👤 Персонаж</h2>
+        <div class="step">Персонаж</div>
         <div class="profile-manager">
             <select id="profileSelect"></select>
             <button id="newProfileBtn">+</button>
@@ -169,11 +174,11 @@
             <option value="1" data-school="ench">Очарование — +1</option>
             <option value="-1" data-school="divin">Прорицание — −1</option>
             <option value="2" data-school="conju">Призыв — +2</option>
-            <option value="-1" data-school="heal">Лечение — −1</option>
+            <option value="1" data-school="heal">Лечение — +1</option>
             <option value="1" data-school="uni">Универсальная — +1</option>
         </select>
         <div id="dynamicSchoolOptions" style="margin-top:10px;">
-            <!-- Эвокация -->
+            <!-- Все школы (полные блоки) -->
             <div id="evocOptions" class="school-option-block">
                 <label class="school-options-label">🔥 Тип урона</label>
                 <select id="damageType">
@@ -189,11 +194,103 @@
                     <option value="5" data-dice="4к6" data-name="Яд" data-min-level="17">Яд (4к6) — +5</option>
                 </select>
             </div>
-            <!-- Остальные блоки школ (идентичны v5.5) я опускаю для краткости, в полном коде они присутствуют -->
+            <div id="illusOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">🎭 Длительность иллюзии</label>
+                <select id="illusionForm">
+                    <option value="0" data-illus-name="Мгновенная вспышка" data-illus-dur="Мгновенно" data-min-level="2">Мгновенная вспышка — +0</option>
+                    <option value="1" data-illus-name="Кратковременная" data-illus-dur="1 раунд" data-min-level="2">Кратковременная (1 раунд) — +1</option>
+                    <option value="2" data-illus-name="Средняя" data-illus-dur="1 минута" data-min-level="4">Средняя (1 минута) — +2</option>
+                    <option value="3" data-illus-name="Длительная" data-illus-dur="10 минут" data-min-level="6">Длительная (10 минут) — +3</option>
+                    <option value="4" data-illus-name="Постоянная" data-illus-dur="1 час" data-min-level="8">Постоянная (1 час) — +4</option>
+                    <option value="6" data-illus-name="До развеивания" data-illus-dur="Пока не развеют" data-min-level="17">До развеивания — +6</option>
+                </select>
+            </div>
+            <div id="healOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">💚 Форма лечения</label>
+                <select id="healForm">
+                    <option value="0" data-heal-dice="1к8" data-name="1 цель" data-min-level="1">1 цель — 1к8 — +0</option>
+                    <option value="2" data-heal-dice="2к8" data-name="Группа (3)" data-min-level="2">Группа (3) — 2к8 — +2</option>
+                    <option value="4" data-heal-dice="3к8" data-name="Массовое (6)" data-min-level="4">Массовое (6) — 3к8 — +4</option>
+                    <option value="7" data-heal-dice="4к8" data-name="Аура (все)" data-min-level="6">Аура (все) — 4к8 — +7</option>
+                    <option value="10" data-heal-dice="6к8" data-name="Воскрешение" data-min-level="17">Воскрешение/Регенерация — 6к8 — +10</option>
+                </select>
+            </div>
+            <div id="abjurOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">🛡 Тип защиты</label>
+                <select id="abjurationForm">
+                    <option value="0" data-abjur-bonus="2" data-abjur-name="Личный щит" data-min-level="1">Личный щит +2 КД — +0</option>
+                    <option value="1" data-abjur-bonus="2" data-abjur-name="Левитирующий щит" data-min-level="2">Левитирующий щит +2 КД (авто) — +1</option>
+                    <option value="2" data-abjur-bonus="2" data-abjur-name="Щит на союзника" data-min-level="4">Щит на союзника +2 КД (1 цель) — +2</option>
+                    <option value="3" data-abjur-bonus="2" data-abjur-name="Массовый щит" data-min-level="6">Массовый щит +2 КД (группа) — +3</option>
+                    <option value="5" data-abjur-bonus="2" data-abjur-name="Непроницаемый барьер" data-min-level="17">Непроницаемый барьер +2 КД — +5</option>
+                </select>
+            </div>
+            <div id="transOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">🔧 Размер/вес предмета</label>
+                <select id="transmutationForm">
+                    <option value="0" data-trans-name="Микроскопический" data-trans-weight="до 100 г" data-min-level="4">Микроскопический (до 100 г) — +0</option>
+                    <option value="1" data-trans-name="Маленький" data-trans-weight="до 5 кг" data-min-level="4">Маленький (до 5 кг) — +1</option>
+                    <option value="2" data-trans-name="Средний" data-trans-weight="до 25 кг" data-min-level="6">Средний (до 25 кг) — +2</option>
+                    <option value="3" data-trans-name="Большой" data-trans-weight="до 100 кг" data-min-level="8">Большой (до 100 кг) — +3</option>
+                    <option value="5" data-trans-name="Огромный" data-trans-weight="до 500 кг" data-min-level="12">Огромный (до 500 кг) — +5</option>
+                    <option value="7" data-trans-name="Колоссальный" data-trans-weight="до 2 тонн" data-min-level="17">Колоссальный (до 2 тонн) — +7</option>
+                </select>
+            </div>
+            <div id="necroOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">💀 Тип некромантии</label>
+                <select id="necromancyForm">
+                    <option value="0" data-necro-name="Касание смерти" data-necro-dice="1к8" data-min-level="6">Касание смерти (1к8) — +0</option>
+                    <option value="1" data-necro-name="Слабое проклятие" data-necro-dice="1к4" data-min-level="6">Слабое проклятие (1к4) — +1</option>
+                    <option value="3" data-necro-name="Поднятие зомби/скелета" data-necro-dice="2к6" data-min-level="8">Поднятие зомби/скелета (2к6) — +3</option>
+                    <option value="5" data-necro-name="Средняя нежить" data-necro-dice="3к6" data-min-level="12">Средняя нежить (гуль, 2-3 зомби) (3к6) — +5</option>
+                    <option value="7" data-necro-name="Сильная нежить" data-necro-dice="4к8" data-min-level="17">Сильная нежить (призрак, 4-6 зомби) (4к8) — +7</option>
+                    <option value="10" data-necro-name="Армия нежити" data-necro-dice="6к8" data-min-level="17">Армия нежити (6к8) — +10</option>
+                </select>
+            </div>
+            <div id="enchOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">🧠 Тип контроля</label>
+                <select id="enchantmentForm">
+                    <option value="0" data-ench-name="Базовое влияние" data-ench-targets="1 цель" data-min-level="4">Базовое влияние (1 цель) — +0</option>
+                    <option value="2" data-ench-name="Массовое очарование" data-ench-targets="3 цели" data-min-level="4">Массовое очарование (3 цели) — +2</option>
+                    <option value="4" data-ench-name="Глубокий контроль" data-ench-targets="1 цель (доминирование)" data-min-level="6">Глубокий контроль (доминирование) — +4</option>
+                    <option value="6" data-ench-name="Полное подчинение" data-ench-targets="1 цель (полное)" data-min-level="8">Полное подчинение — +6</option>
+                    <option value="8" data-ench-name="Изменение памяти" data-ench-targets="1 цель (память)" data-min-level="17">Изменение памяти — +8</option>
+                </select>
+            </div>
+            <div id="divinOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">🔮 Тип прорицания</label>
+                <select id="divinationForm">
+                    <option value="0" data-divin-name="Базовое предсказание" data-divin-range="Ближняя" data-min-level="2">Базовое предсказание — +0</option>
+                    <option value="1" data-divin-name="Обнаружение существ" data-divin-range="Средняя" data-min-level="2">Обнаружение существ/предметов — +1</option>
+                    <option value="3" data-divin-name="Видение прошлого" data-divin-range="Дальняя" data-min-level="4">Видение прошлого/будущего — +3</option>
+                    <option value="5" data-divin-name="Истинное зрение" data-divin-range="Средняя" data-min-level="6">Истинное зрение — +5</option>
+                    <option value="7" data-divin-name="Контакт с высшими силами" data-divin-range="Неограниченная" data-min-level="17">Контакт с высшими силами — +7</option>
+                </select>
+            </div>
+            <div id="conjuOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">🌀 Тип призыва</label>
+                <select id="conjurationForm">
+                    <option value="0" data-conju-name="Мелкое существо" data-conju-cr="CR 0-1/4" data-min-level="4">Мелкое существо (CR 0-1/4) — +0</option>
+                    <option value="2" data-conju-name="Среднее существо" data-conju-cr="CR 1/2-1" data-min-level="4">Среднее существо (CR 1/2-1) — +2</option>
+                    <option value="4" data-conju-name="Сильное существо" data-conju-cr="CR 2-4" data-min-level="6">Сильное существо (CR 2-4) — +4</option>
+                    <option value="6" data-conju-name="Стая существ" data-conju-cr="CR 1/4 (стая)" data-min-level="8">Стая существ — +6</option>
+                    <option value="9" data-conju-name="Элементаль/демон" data-conju-cr="CR 5+" data-min-level="17">Элементаль/демон (CR 5+) — +9</option>
+                </select>
+            </div>
+            <div id="uniOptions" class="school-option-block" style="display:none;">
+                <label class="school-options-label">🌟 Тип эффекта</label>
+                <select id="universalForm">
+                    <option value="0" data-uni-name="Базовый аркан" data-uni-scope="Одиночный" data-min-level="2">Базовый аркан — +0</option>
+                    <option value="2" data-uni-name="Комбинированный" data-uni-scope="Двойной" data-min-level="2">Комбинированный эффект — +2</option>
+                    <option value="4" data-uni-name="Сложный ритуал" data-uni-scope="Область" data-min-level="4">Сложный ритуал — +4</option>
+                    <option value="6" data-uni-name="Могущественный аркан" data-uni-scope="Большая область" data-min-level="6">Могущественный аркан — +6</option>
+                    <option value="10" data-uni-name="Изменение реальности" data-uni-scope="Безграничный" data-min-level="17">Изменение реальности — +10</option>
+                </select>
+            </div>
         </div>
     </div>
 
-    <!-- Усиление (×2–×5) -->
+    <!-- Усиление -->
     <div class="panel">
         <div class="step">Шаг 3</div>
         <h2>⚡ Усиление заклинания</h2>
@@ -204,7 +301,7 @@
             <option value="12" data-mult="4">×4 усиление — +12</option>
             <option value="16" data-mult="5">×5 усиление — +16</option>
         </select>
-        <div id="boostWarning" style="color:var(--danger); font-size:0.8em; margin-top:6px; display:none;">⚠️ Усиление недоступно для этого заклинания</div>
+        <div id="boostWarning" style="color:#f87171; font-size:0.8em; margin-top:6px; display:none;">⚠️ Усиление недоступно для этого заклинания</div>
     </div>
 
     <!-- Модификаторы -->
@@ -212,7 +309,42 @@
         <div class="step">Шаг 4</div>
         <h2>🔧 Модификаторы</h2>
         <div id="modContainer">
-            <!-- Группы модификаторов как в v5.5, полностью идентичны -->
+            <!-- Группы модификаторов идентичны v5.5 -->
+            <div class="group-header">🎯 Манипуляция снарядом</div>
+            <div class="mod-item"><input type="checkbox" value="2"> Самонаведение <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="3"> Разделение луча <span class="mod-cost">+3</span></div>
+            <div class="mod-item"><input type="checkbox" value="4"> Цепная реакция (до 4х существ) <span class="mod-cost">+4</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Рикошет (до 2ух существ) <span class="mod-cost">+2</span></div>
+            <div class="group-header">⚔️ Эффекты на врагов</div>
+            <div class="mod-item"><input type="checkbox" value="1"> Меткость (+2 к атаке) <span class="mod-cost">+1</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Оглушение (1 раунд) <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Горение/Заморозка (1к4) <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="1"> Отбрасывание (5 фт) <span class="mod-cost">+1</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Ослепление/Глухота <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Опутывание <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Труднопроходимая зона <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Притягивание (10 фт) <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Страх (1 раунд) <span class="mod-cost">+2</span></div>
+            <div class="group-header">✨ Положительные эффекты</div>
+            <div class="mod-item"><input type="checkbox" value="3"> Отражение <span class="mod-cost">+3</span></div>
+            <div class="mod-item"><input type="checkbox" value="2"> Поглощение (+1к4 маны) <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="3"> Незаметная <span class="mod-cost">+3</span></div>
+            <div class="group-header">⚡ Тип действия</div>
+            <div class="mod-item" id="mod-bonus"><input type="checkbox" value="4" class="action-mod"> Бонусное - действие <span class="mod-cost">+4</span></div>
+            <div class="mod-item" id="mod-reaction"><input type="checkbox" value="3" class="action-mod"> Реакция <span class="mod-cost">+3</span></div>
+            <div class="mod-item" id="mod-delayed"><input type="checkbox" value="3" class="action-mod"> Отложенное <span class="mod-cost">+3</span></div>
+            <div class="group-header">⏳ Увеличение времени действия</div>
+            <div id="time-group">
+                <div class="mod-item" id="mod-time-1turn"><input type="checkbox" value="1" class="time-mod"> 1 ход <span class="mod-cost">+1</span></div>
+                <div class="mod-item" id="mod-time-1min"><input type="checkbox" value="2" class="time-mod"> 1 минута <span class="mod-cost">+2</span></div>
+                <div class="mod-item" id="mod-time-10min"><input type="checkbox" value="3" class="time-mod"> 10 минут <span class="mod-cost">+3</span></div>
+                <div class="mod-item" id="mod-time-30min"><input type="checkbox" value="4" class="time-mod"> 30 минут <span class="mod-cost">+4</span></div>
+                <div class="mod-item" id="mod-time-1hour"><input type="checkbox" value="5" class="time-mod"> 1 час <span class="mod-cost">+5</span></div>
+                <div class="mod-item" id="mod-time-conc"><input type="checkbox" value="2" class="time-mod"> Концентрация <span class="mod-cost">+2</span></div>
+            </div>
+            <div class="group-header">🧩 Компоненты</div>
+            <div class="mod-item"><input type="checkbox" value="2"> Тихая магия <span class="mod-cost">+2</span></div>
+            <div class="mod-item"><input type="checkbox" value="1"> Неподвижная <span class="mod-cost">+1</span></div>
         </div>
     </div>
 
@@ -234,7 +366,6 @@
     <!-- Параметры заклинания -->
     <div class="preview-panel">
         <h3>📜 Параметры заклинания</h3>
-        <div class="psub">Автоматически на основе выбора</div>
         <input type="text" class="spell-name-input" id="spellName" placeholder="Название заклинания..." maxlength="60">
         <textarea class="spell-desc-input" id="spellDesc" placeholder="Описание заклинания... (необязательно)" rows="2"></textarea>
         <div class="preview-item" style="margin-bottom:10px;">
@@ -249,10 +380,7 @@
             <div class="preview-item"><div class="pl">🧩 Компоненты</div><div class="pv" id="previewComponents">Вербальный, Соматический</div></div>
         </div>
         <div class="comp-block" id="compDetails"><span style="color:var(--accent2);">🗣 Голос:</span> Да &nbsp;|&nbsp; <span style="color:var(--accent2);">✋ Жесты:</span> Да</div>
-        <div class="comp-block" style="margin-top:8px;">
-            <span style="color:var(--accent2);">🔧 Активные модификаторы:</span>
-            <div id="activeMods" class="mods-list">Нет</div>
-        </div>
+        <div class="comp-block" style="margin-top:8px;"><span style="color:var(--accent2);">🔧 Активные модификаторы:</span> <div id="activeMods" class="mods-list">Нет</div></div>
     </div>
 
     <!-- Сохранение заклинания -->
@@ -271,34 +399,55 @@
         <button id="copyBtn" class="btn blu">📋 Копировать заклинание</button>
     </div>
 
-    <!-- Настройки -->
-    <div class="panel settings-panel">
-        <h2>⚙️ Настройки</h2>
-        <label>Тема</label>
-        <select id="themeSelect">
-            <option value="dark" selected>Тёмная</option>
-            <option value="light">Светлая</option>
-        </select>
-        <label>Формула маны</label>
-        <input type="text" id="manaFormulaInput" placeholder="level*3 + level*int">
-        <button id="applySettingsBtn" class="btn">Применить</button>
-    </div>
-
     <!-- Сохранённые заклинания -->
     <div class="panel" id="savedSpellsPanel">
         <h2>📚 Сохранённые заклинания</h2>
         <div id="savedSpellsList">Нет сохранённых заклинаний</div>
     </div>
-    <div class="footer">Магия Свободной Воли v5.6 · Настройки · Профили · Светлая тема</div>
+    <div class="footer">Магия Свободной Воли v5.7 · Иллюзия доступна · Лечение +1</div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
     (function() {
-        // ... (весь предыдущий код calc, multiplyDice, copyText и т.д.)
-
-        // Настройки и профили
+        const L = document.getElementById('L');
+        const I = document.getElementById('I');
+        const spellMod = document.getElementById('spellMod');
+        const maxM = document.getElementById('maxM');
+        const limM = document.getElementById('limM');
+        const availBase = document.getElementById('availBase');
+        const S1 = document.getElementById('S1');
+        const S2 = document.getElementById('S2');
+        const S3 = document.getElementById('S3');
+        const boostWarning = document.getElementById('boostWarning');
+        const damageType = document.getElementById('damageType');
+        const healForm = document.getElementById('healForm');
+        const illusionForm = document.getElementById('illusionForm');
+        const transmutationForm = document.getElementById('transmutationForm');
+        const necromancyForm = document.getElementById('necromancyForm');
+        const abjurationForm = document.getElementById('abjurationForm');
+        const enchantmentForm = document.getElementById('enchantmentForm');
+        const divinationForm = document.getElementById('divinationForm');
+        const conjurationForm = document.getElementById('conjurationForm');
+        const universalForm = document.getElementById('universalForm');
+        const spellName = document.getElementById('spellName');
+        const spellDesc = document.getElementById('spellDesc');
+        const actionDisplay = document.getElementById('actionDisplay');
+        const actionCondition = document.getElementById('actionCondition');
+        const activeModsDiv = document.getElementById('activeMods');
+        const r1 = document.getElementById('r1'), r2 = document.getElementById('r2'), r3 = document.getElementById('r3');
+        const rt = document.getElementById('rt'), rs = document.getElementById('rs');
+        const rtc = document.getElementById('rtc'), rlc = document.getElementById('rlc'), rlv = document.getElementById('rlv');
+        const previewMainLabel = document.getElementById('previewMainLabel'), previewDiceLabel = document.getElementById('previewDiceLabel');
+        const previewMain = document.getElementById('previewMain'), previewDice = document.getElementById('previewDice');
+        const previewDuration = document.getElementById('previewDuration'), previewComponents = document.getElementById('previewComponents');
+        const compDetails = document.getElementById('compDetails');
+        const copyBtn = document.getElementById('copyBtn');
+        const saveBtn = document.getElementById('saveSpellBtn');
+        const groupSelect = document.getElementById('groupSelect');
+        const newGroupInput = document.getElementById('newGroupName');
+        const savedList = document.getElementById('savedSpellsList');
         const profileSelect = document.getElementById('profileSelect');
         const newProfileBtn = document.getElementById('newProfileBtn');
         const deleteProfileBtn = document.getElementById('deleteProfileBtn');
@@ -306,16 +455,48 @@
         const manaFormulaInput = document.getElementById('manaFormulaInput');
         const applySettingsBtn = document.getElementById('applySettingsBtn');
 
-        // Загрузка/сохранение настроек
-        let settings = JSON.parse(localStorage.getItem('dnd_settings') || '{"theme":"dark","manaFormula":"level*3 + level*int"}');
+        // ---------- Карты школ ----------
+        const schoolSelectMap = {
+            'evoc': damageType, 'heal': healForm, 'illus': illusionForm,
+            'trans': transmutationForm, 'necro': necromancyForm, 'abjur': abjurationForm,
+            'ench': enchantmentForm, 'divin': divinationForm, 'conju': conjurationForm,
+            'uni': universalForm
+        };
+        const schoolBlockMap = {
+            'evoc': 'evocOptions', 'heal': 'healOptions', 'illus': 'illusOptions',
+            'trans': 'transOptions', 'necro': 'necroOptions', 'abjur': 'abjurOptions',
+            'ench': 'enchOptions', 'divin': 'divinOptions', 'conju': 'conjuOptions',
+            'uni': 'uniOptions'
+        };
+        const schoolAvailability = {
+            1: ['evoc','abjur','heal'],
+            2: ['evoc','abjur','heal','illus','divin','uni'],
+            4: ['evoc','abjur','heal','illus','divin','uni','trans','ench','conju'],
+            6: ['evoc','abjur','heal','illus','divin','uni','trans','ench','conju','necro'],
+            8: ['evoc','illus','trans','necro','abjur','ench','divin','conju','heal','uni'],
+            12: ['evoc','illus','trans','necro','abjur','ench','divin','conju','heal','uni'],
+            17: ['evoc','illus','trans','necro','abjur','ench','divin','conju','heal','uni'],
+            23: ['evoc','illus','trans','necro','abjur','ench','divin','conju','heal','uni']
+        };
+
+        function getProfBonus(level) {
+            if (level >= 17) return 6;
+            if (level >= 13) return 5;
+            if (level >= 9) return 4;
+            if (level >= 5) return 3;
+            return 2;
+        }
+
+        function updateSpellMod() {
+            const level = parseInt(L.value) || 1;
+            const intMod = parseInt(I.value) || 0;
+            const total = getProfBonus(level) + intMod;
+            spellMod.textContent = (total >= 0 ? '+' : '') + total;
+        }
+
+        // ---------- Профили ----------
         let profiles = JSON.parse(localStorage.getItem('dnd_profiles') || '{"default":{"name":"Default","level":1,"int":0}}');
         let currentProfile = localStorage.getItem('dnd_currentProfile') || 'default';
-
-        function applyTheme(theme) {
-            if (theme === 'light') document.body.classList.add('light-theme');
-            else document.body.classList.remove('light-theme');
-            themeSelect.value = theme;
-        }
 
         function updateProfileList() {
             profileSelect.innerHTML = '';
@@ -378,42 +559,469 @@
             loadProfile(currentProfile);
         });
 
-        // Сохранение при изменении характеристик
         L.addEventListener('change', saveCurrentProfile);
         I.addEventListener('change', saveCurrentProfile);
+
+        // ---------- Настройки ----------
+        let settings = JSON.parse(localStorage.getItem('dnd_settings') || '{"theme":"dark","manaFormula":"level*3 + level*int"}');
+
+        function applyTheme(theme) {
+            if (theme === 'light') document.body.classList.add('light-theme');
+            else document.body.classList.remove('light-theme');
+            themeSelect.value = theme;
+        }
+
+        function calcMaxMana(level, intMod) {
+            const formula = settings.manaFormula
+                .replace(/level/g, level)
+                .replace(/int/g, intMod)
+                .replace(/\s+/g, '');
+            try {
+                if (/^[\d\+\-\*\/\(\)\.]+$/.test(formula)) {
+                    const result = new Function('return ' + formula)();
+                    return Math.floor(result) || 0;
+                }
+            } catch (e) {}
+            return level * 3 + level * intMod;
+        }
 
         applySettingsBtn.addEventListener('click', () => {
             settings.theme = themeSelect.value;
             settings.manaFormula = manaFormulaInput.value.trim() || 'level*3 + level*int';
             localStorage.setItem('dnd_settings', JSON.stringify(settings));
             applyTheme(settings.theme);
-            calc(); // пересчитаем ману по новой формуле
+            calc();
             showToast('Настройки сохранены');
         });
 
-        // Загрузка настроек при старте
-        applyTheme(settings.theme);
-        manaFormulaInput.value = settings.manaFormula;
+        // ---------- Сохранённые заклинания ----------
+        let spellsData = JSON.parse(localStorage.getItem('dnd_spells_v5') || '{"groups":{}}');
+        function saveSpellsData() { localStorage.setItem('dnd_spells_v5', JSON.stringify(spellsData)); }
 
-        // Переопределяем расчёт маны
-        function calcMaxMana(level, intMod) {
-            try {
-                const formula = settings.manaFormula.replace(/level/g, level).replace(/int/g, intMod);
-                return Math.floor(eval(formula)) || 0;
-            } catch (e) {
-                return level * 3 + level * intMod;
-            }
+        function renderSavedSpells() {
+            savedList.innerHTML = '';
+            const groups = spellsData.groups;
+            if (Object.keys(groups).length === 0) { savedList.textContent = 'Нет сохранённых заклинаний'; return; }
+            Object.keys(groups).forEach(group => {
+                const spells = groups[group];
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'saved-group';
+                groupDiv.innerHTML = `<h4>📁 ${group}</h4>`;
+                spells.forEach((spell, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'saved-spell-card';
+                    card.innerHTML = `
+                        <div class="ss-name">${spell.name}</div>
+                        ${spell.desc ? `<div class="ss-desc">${spell.desc}</div>` : ''}
+                        <div class="ss-details">
+                            <span>⚡ ${spell.mana}</span><span>🎯 ${spell.sl}</span>
+                            <span>🔥 ${spell.type}</span><span>🦴 ${spell.dice}</span>
+                            <span>⏱ ${spell.duration}</span>
+                        </div>
+                        <div class="saved-spell-actions">
+                            <button class="copy-saved-spell" data-group="${group}" data-index="${index}">Копировать</button>
+                            <button class="delete-spell" data-group="${group}" data-index="${index}">Удалить</button>
+                        </div>`;
+                    groupDiv.appendChild(card);
+                });
+                savedList.appendChild(groupDiv);
+            });
+            document.querySelectorAll('.copy-saved-spell').forEach(btn => btn.addEventListener('click', e => {
+                const group = e.target.dataset.group;
+                const index = parseInt(e.target.dataset.index);
+                copySavedSpell(group, index);
+            }));
+            document.querySelectorAll('.delete-spell').forEach(btn => btn.addEventListener('click', e => {
+                const group = e.target.dataset.group;
+                const index = parseInt(e.target.dataset.index);
+                deleteSpell(group, index);
+            }));
         }
 
-        // В функции calc заменяем строку:
-        // const maxMana = level * 3 + level * intMod;
-        // на:
-        const maxMana = calcMaxMana(level, intMod);
+        function updateGroupSelect() {
+            const groups = Object.keys(spellsData.groups);
+            groupSelect.innerHTML = '<option value="">-- Новая группа --</option>';
+            groups.forEach(g => { const opt = document.createElement('option'); opt.value = g; opt.textContent = g; groupSelect.appendChild(opt); });
+        }
+
+        function saveCurrentSpell() {
+            if (!S1.value) { showToast('Выберите основу заклинания'); return; }
+            calc();
+            const name = spellName.value.trim() || 'Без названия';
+            const desc = spellDesc.value.trim();
+            const spell = {
+                name, desc,
+                mana: rt.textContent, sl: rs.textContent,
+                type: previewMain.textContent, dice: previewDice.textContent,
+                duration: previewDuration.textContent, components: previewComponents.textContent,
+                modifiers: activeModsDiv.textContent, action: actionDisplay.textContent,
+                condition: actionCondition.value.trim()
+            };
+            let group = newGroupInput.value.trim();
+            if (!group) group = groupSelect.value;
+            if (!group) group = 'Общее';
+            if (!spellsData.groups[group]) spellsData.groups[group] = [];
+            spellsData.groups[group].push(spell);
+            saveSpellsData();
+            updateGroupSelect();
+            renderSavedSpells();
+            showToast('✅ Заклинание сохранено!');
+        }
+
+        function copySavedSpell(group, index) {
+            const spell = spellsData.groups[group][index];
+            if (!spell) return;
+            const text = `🎴 Заклинание: ${spell.name}\n📝 Описание: ${spell.desc || 'Описание не указано'}\n⚡ Действие: ${spell.action}${spell.condition ? ' ('+spell.condition+')' : ''}\n⚡ Мана: ${spell.mana} | СЛ: ${spell.sl}\n🔥 Тип/Эффект: ${spell.type}\n🦴 Кости/Параметр: ${spell.dice}\n⏱ Длительность: ${spell.duration}\n🧩 Компоненты: ${spell.components}\n🔧 Модификаторы: ${spell.modifiers}\nСохранено в Калькуляторе Маны v5.7`;
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(text).then(() => showToast('✅ Заклинание скопировано!')).catch(() => fallbackCopy(text));
+            } else fallbackCopy(text);
+        }
+
+        function deleteSpell(group, index) {
+            spellsData.groups[group].splice(index, 1);
+            if (spellsData.groups[group].length === 0) delete spellsData.groups[group];
+            saveSpellsData();
+            updateGroupSelect();
+            renderSavedSpells();
+            showToast('🗑 Заклинание удалено');
+        }
+
+        // ---------- Вспомогательные функции ----------
+        function getMaxBaseByLevel(level) {
+            if (level >= 15) return 23; if (level >= 13) return 17; if (level >= 11) return 12;
+            if (level >= 9) return 8; if (level >= 7) return 6; if (level >= 5) return 4;
+            if (level >= 3) return 2; return 1;
+        }
+        function getBaseDescription(value) {
+            const map = {1:'0 — Искра',2:'1 — Простой',4:'2 — Средний',6:'3 — Значительный',8:'4 — Сложный',12:'5 — Великий',17:'6 — Легендарный',23:'7 — Эпический'};
+            return map[value] || 'Неизвестно';
+        }
+
+        function updateBaseAvailability() {
+            const level = parseInt(L.value) || 1;
+            const maxBase = getMaxBaseByLevel(level);
+            const options = S1.options;
+            let currentValid = true;
+            if (S1.value && parseInt(S1.value) > maxBase) currentValid = false;
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value && parseInt(options[i].value) > maxBase) options[i].setAttribute('disabled', '');
+                else options[i].removeAttribute('disabled');
+            }
+            if (!currentValid && S1.value) {
+                for (let i = options.length-1; i >= 0; i--) {
+                    if (!options[i].disabled) { S1.selectedIndex = i; break; }
+                }
+            }
+            availBase.textContent = getBaseDescription(maxBase);
+        }
+
+        function hasScalableValue() {
+            if (!S1.value) return false;
+            const school = S2.options[S2.selectedIndex].getAttribute('data-school');
+            const select = schoolSelectMap[school];
+            if (!select || !select.options[select.selectedIndex]) return false;
+            const opt = select.options[select.selectedIndex];
+            return !!(opt && (opt.hasAttribute('data-dice') || opt.hasAttribute('data-heal-dice') || opt.hasAttribute('data-necro-dice') || opt.hasAttribute('data-abjur-bonus')));
+        }
+
+        function updateBoostAvailability() {
+            const scalable = hasScalableValue();
+            S3.disabled = !scalable;
+            boostWarning.style.display = scalable ? 'none' : 'block';
+            if (!scalable) { S3.value = '0'; }
+        }
+
+        function updateSchoolAvailability() {
+            if (!S1.value) return;
+            const baseVal = parseInt(S1.value);
+            const allowed = schoolAvailability[baseVal] || schoolAvailability[1];
+            const options = S2.options;
+            let currentSchool = S2.options[S2.selectedIndex].getAttribute('data-school');
+            let firstAvailable = -1;
+            for (let i = 0; i < options.length; i++) {
+                const school = options[i].getAttribute('data-school');
+                if (allowed.includes(school)) { options[i].removeAttribute('disabled'); if (firstAvailable === -1) firstAvailable = i; }
+                else options[i].setAttribute('disabled', '');
+            }
+            if (!allowed.includes(currentSchool) && firstAvailable !== -1) S2.selectedIndex = firstAvailable;
+            updateSchoolVisibility();
+            updateDynamicOptionsRestrictions();
+            updateTimeGroupAvailability();
+            updateBoostAvailability();
+            calc();
+        }
+
+        function updateSchoolVisibility() {
+            const school = S2.options[S2.selectedIndex].getAttribute('data-school');
+            document.querySelectorAll('.school-option-block').forEach(b => b.style.display = 'none');
+            const blockId = schoolBlockMap[school];
+            if (blockId) { const block = document.getElementById(blockId); if (block) block.style.display = 'block'; }
+            updatePreviewLabels(school);
+        }
+
+        function updatePreviewLabels(school) {
+            const labels = {
+                'evoc': ['🔥 Тип урона','🦴 Кости урона'], 'heal': ['💚 Тип лечения','🦴 Кости хила'],
+                'illus': ['🎭 Тип иллюзии','⏱ Длительность'], 'trans': ['🔧 Тип трансмутации','⚖️ Вес предмета'],
+                'necro': ['💀 Тип некромантии','🦴 Кости урона'], 'abjur': ['🛡 Тип защиты','📊 Бонус КД'],
+                'ench': ['🧠 Тип контроля','🎯 Цели'], 'divin': ['🔮 Тип прорицания','📡 Дальность'],
+                'conju': ['🌀 Тип призыва','⭐ Уровень угрозы'], 'uni': ['🌟 Тип эффекта','🌐 Охват']
+            };
+            const [main, dice] = labels[school] || ['🔥 Тип / Лечение','🦴 Кости урона/хила'];
+            previewMainLabel.textContent = main; previewDiceLabel.textContent = dice;
+        }
+
+        function updateDynamicOptionsRestrictions() {
+            const baseVal = parseInt(S1.value);
+            Object.values(schoolSelectMap).forEach(select => {
+                const options = select.options;
+                let currentValid = true;
+                const selectedOpt = options[select.selectedIndex];
+                if (selectedOpt && selectedOpt.hasAttribute('data-min-level')) {
+                    if (baseVal < parseInt(selectedOpt.getAttribute('data-min-level'))) currentValid = false;
+                }
+                for (let i = 0; i < options.length; i++) {
+                    const opt = options[i];
+                    if (opt.hasAttribute('data-min-level')) {
+                        if (baseVal < parseInt(opt.getAttribute('data-min-level'))) opt.setAttribute('disabled', '');
+                        else opt.removeAttribute('disabled');
+                    }
+                }
+                if (!currentValid) {
+                    for (let i = 0; i < options.length; i++) { if (!options[i].disabled) { select.selectedIndex = i; break; } }
+                }
+            });
+        }
+
+        function updateActionModifiers() {
+            const bonusCb = document.querySelector('#mod-bonus input.action-mod');
+            const reactionCb = document.querySelector('#mod-reaction input.action-mod');
+            const delayedCb = document.querySelector('#mod-delayed input.action-mod');
+            const anyChecked = bonusCb.checked || reactionCb.checked || delayedCb.checked;
+            ['mod-bonus','mod-reaction','mod-delayed'].forEach(id => {
+                const parent = document.getElementById(id);
+                const cb = parent.querySelector('input');
+                if (anyChecked && !cb.checked) parent.classList.add('mod-disabled');
+                else parent.classList.remove('mod-disabled');
+            });
+        }
+
+        function updateTimeModifiers() {
+            const timeMods = document.querySelectorAll('.time-mod');
+            const anyChecked = Array.from(timeMods).some(cb => cb.checked);
+            timeMods.forEach(cb => {
+                const parent = cb.closest('.mod-item');
+                if (!parent) return;
+                if (anyChecked && !cb.checked) parent.classList.add('mod-disabled');
+                else parent.classList.remove('mod-disabled');
+            });
+        }
+
+        function updateTimeGroupAvailability() {
+            const school = S2.options[S2.selectedIndex].getAttribute('data-school');
+            const timeGroup = document.getElementById('time-group');
+            if (!timeGroup) return;
+            const disableTime = (school === 'evoc' || school === 'illus');
+            timeGroup.querySelectorAll('.mod-item').forEach(item => {
+                if (disableTime) {
+                    item.classList.add('mod-disabled');
+                    const cb = item.querySelector('input.time-mod');
+                    if (cb && cb.checked) { cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+                } else { item.classList.remove('mod-disabled'); }
+            });
+            if (disableTime) updateTimeModifiers();
+        }
+
+        // ---------- Основной расчёт ----------
+        function calc() {
+            if (!S1.value) {
+                r1.textContent = '—'; r2.textContent = '—'; r3.textContent = '—'; rt.textContent = '—';
+                rs.textContent = '—'; rlv.textContent = '—';
+                return;
+            }
+            const level = parseInt(L.value) || 1;
+            const intMod = parseInt(I.value) || 0;
+            const maxMana = calcMaxMana(level, intMod);
+            const limitMana = Math.ceil(maxMana / 2);
+            maxM.textContent = maxMana; limM.textContent = limitMana;
+            updateSpellMod();
+
+            const base = parseInt(S1.value);
+            const schoolBase = parseInt(S2.value);
+            const dynamicCost = parseInt(schoolSelectMap[S2.options[S2.selectedIndex].getAttribute('data-school')]?.value) || 0;
+            const boost = S3.disabled ? 0 : parseInt(S3.value);
+            let mods = 0, count = 0;
+            document.querySelectorAll('.mod-item input[type="checkbox"]').forEach(cb => { if (cb.checked) { mods += parseInt(cb.value); count++; } });
+            const totalSchool = schoolBase + dynamicCost + boost;
+            const total = base + totalSchool + mods;
+            const baseSL = parseInt(S1.options[S1.selectedIndex].getAttribute('data-sl')) || 10;
+            const sl = base === 1 ? '—' : (baseSL + Math.floor(count / 2));
+            r1.textContent = base; r2.textContent = totalSchool; r3.textContent = mods; rt.textContent = total; rs.textContent = sl;
+
+            if (total > limitMana) {
+                rtc.style.borderColor = '#f87171'; rtc.style.background = '#2a1515';
+                rlc.style.borderColor = '#f87171'; rlv.textContent = 'ПРЕВЫШЕН!'; rlv.style.color = '#f87171';
+            } else {
+                rtc.style.borderColor = '#7b2ff7'; rtc.style.background = '#1f1635';
+                rlc.style.borderColor = '#252545'; rlv.textContent = 'ОК'; rlv.style.color = '#f0c060';
+            }
+
+            const school = S2.options[S2.selectedIndex].getAttribute('data-school');
+            const select = schoolSelectMap[school];
+            const opt = select?.options[select.selectedIndex];
+            const mult = S3.disabled ? 1 : parseInt(S3.options[S3.selectedIndex].getAttribute('data-mult')) || 1;
+            let mainText = '—', diceText = '—', durationOverride = null;
+            if (school === 'evoc' && opt) {
+                mainText = opt.getAttribute('data-name')||'Огонь';
+                diceText = multiplyDice(opt.getAttribute('data-dice')||'1к6', mult);
+            } else if (school === 'heal' && opt) {
+                mainText = opt.getAttribute('data-name')||'1 цель';
+                diceText = multiplyDice(opt.getAttribute('data-heal-dice')||'1к8', mult);
+            } else if (school === 'abjur' && opt) {
+                mainText = opt.getAttribute('data-abjur-name')||'Ограждение';
+                const bonus = parseInt(opt.getAttribute('data-abjur-bonus')) || 2;
+                diceText = `+${bonus * mult} КД`;
+            } else if (school === 'illus' && opt) {
+                mainText = opt.getAttribute('data-illus-name');
+                diceText = opt.getAttribute('data-illus-dur');
+                durationOverride = diceText;
+            } else if (school === 'trans' && opt) { mainText = opt.getAttribute('data-trans-name'); diceText = opt.getAttribute('data-trans-weight'); }
+            else if (school === 'necro' && opt) { mainText = opt.getAttribute('data-necro-name'); diceText = multiplyDice(opt.getAttribute('data-necro-dice')||'1к8', mult); }
+            else if (school === 'ench' && opt) { mainText = opt.getAttribute('data-ench-name'); diceText = opt.getAttribute('data-ench-targets'); }
+            else if (school === 'divin' && opt) { mainText = opt.getAttribute('data-divin-name'); diceText = opt.getAttribute('data-divin-range'); }
+            else if (school === 'conju' && opt) { mainText = opt.getAttribute('data-conju-name'); diceText = opt.getAttribute('data-conju-cr'); }
+            else if (school === 'uni' && opt) { mainText = opt.getAttribute('data-uni-name'); diceText = opt.getAttribute('data-uni-scope'); }
+
+            let verbal = true, somatic = true;
+            const activeMods = [];
+            document.querySelectorAll('.mod-item input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) {
+                    const label = cb.parentElement.textContent.trim();
+                    if (label.includes('Тихая магия')) verbal = false;
+                    if (label.includes('Неподвижная')) somatic = false;
+                    activeMods.push(label.split('(')[0].trim());
+                }
+            });
+            const comps = [];
+            if (verbal) comps.push('Вербальный');
+            if (somatic) comps.push('Соматический');
+            if (!verbal && !somatic) comps.push('Без компонентов');
+
+            let actionType = 'Основное действие';
+            if (document.querySelector('#mod-bonus input.action-mod').checked) actionType = 'Бонусное - действие';
+            else if (document.querySelector('#mod-reaction input.action-mod').checked) actionType = 'Реакция';
+            else if (document.querySelector('#mod-delayed input.action-mod').checked) actionType = 'Отложенное';
+
+            previewMain.textContent = mainText;
+            previewDice.textContent = diceText;
+            let duration = durationOverride || 'Мгновенно';
+            const timeCb = document.querySelector('.time-mod:checked');
+            if (timeCb) duration = timeCb.parentElement.textContent.trim().split('(')[0].trim();
+            else {
+                document.querySelectorAll('.mod-item input[type="checkbox"]').forEach(cb => {
+                    if (cb.checked) {
+                        const l = cb.parentElement.textContent.trim();
+                        if (l.includes('Оглушение')||l.includes('Ослепление')||l.includes('Страх')) duration = '1 раунд';
+                        else if (l.includes('Горение')||l.includes('Опутывание')||l.includes('Труднопроходимая')) duration = '1 минута (концентрация)';
+                        else if (l.includes('Отложенное')) duration = 'До 1 минуты';
+                    }
+                });
+            }
+            previewDuration.textContent = duration;
+            previewComponents.textContent = comps.join(', ') || 'Нет';
+            compDetails.innerHTML = `<span style="color:var(--accent2);">🗣 Голос:</span> ${verbal ? 'Да' : 'Нет'} &nbsp;|&nbsp; <span style="color:var(--accent2);">✋ Жесты:</span> ${somatic ? 'Да' : 'Нет'}`;
+            activeModsDiv.textContent = activeMods.length ? activeMods.join(', ') : 'Нет';
+
+            actionDisplay.textContent = actionType;
+            if (actionType === 'Отложенное') { actionCondition.style.display = 'block'; }
+            else { actionCondition.style.display = 'none'; actionCondition.value = ''; }
+        }
+
+        function multiplyDice(diceStr, mult) {
+            if (mult === 1 || !diceStr || diceStr === '—' || diceStr.includes('Зависит')) return diceStr;
+            const m = diceStr.match(/(\d+)к(\d+)/);
+            if (!m) return diceStr;
+            const cnt = parseInt(m[1]) * mult;
+            const die = parseInt(m[2]);
+            return `${cnt}к${die}`;
+        }
+
+        function copyText() {
+            if (!S1.value) { showToast('Сначала выберите основу заклинания'); return; }
+            calc();
+            const name = spellName.value.trim() || 'Без названия';
+            const desc = spellDesc.value.trim() || 'Описание не указано';
+            const mods = activeModsDiv.textContent === 'Нет' ? 'Нет' : activeModsDiv.textContent;
+            const action = actionDisplay.textContent;
+            const condition = action === 'Отложенное' ? actionCondition.value.trim() : '';
+            const text = `🎴 Заклинание: ${name}\n📝 Описание: ${desc}\n⚡ Действие: ${action}${condition ? ' ('+condition+')' : ''}\n⚡ Мана: ${rt.textContent} | СЛ: ${rs.textContent}\n🔥 Тип/Эффект: ${previewMain.textContent}\n🦴 Кости/Параметр: ${previewDice.textContent}\n⏱ Длительность: ${previewDuration.textContent}\n🧩 Компоненты: ${previewComponents.textContent}\n🔧 Модификаторы: ${mods}\nСоздано в Калькуляторе Маны v5.7`;
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(text).then(() => showToast('✅ Заклинание скопировано!')).catch(() => fallbackCopy(text));
+            } else fallbackCopy(text);
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.top='0'; ta.style.left='0';
+            ta.style.width='1px'; ta.style.height='1px'; ta.style.opacity='0'; ta.style.pointerEvents='none';
+            document.body.appendChild(ta); ta.focus(); ta.select();
+            try { document.execCommand('copy'); showToast('✅ Скопировано!'); } catch (e) { showToast('Скопируйте вручную'); }
+            document.body.removeChild(ta);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; t.style.opacity = '1';
+            clearTimeout(t._timeout);
+            t._timeout = setTimeout(() => { t.style.opacity = '0'; setTimeout(() => { t.style.display = 'none'; }, 300); }, 2000);
+        }
+
+        // Привязка событий
+        saveBtn.addEventListener('click', saveCurrentSpell);
+        copyBtn.addEventListener('click', copyText);
+
+        L.addEventListener('input', () => { updateBaseAvailability(); updateSpellMod(); calc(); });
+        I.addEventListener('input', () => { updateSpellMod(); calc(); });
+        S1.addEventListener('change', () => { if (S1.value) updateSchoolAvailability(); else calc(); });
+        S2.addEventListener('change', () => { updateSchoolVisibility(); updateTimeGroupAvailability(); updateBoostAvailability(); calc(); });
+        S3.addEventListener('change', calc);
+        document.querySelectorAll('.school-option-block select').forEach(sel => sel.addEventListener('change', () => { updateBoostAvailability(); calc(); }));
+        spellName.addEventListener('input', calc);
+        spellDesc.addEventListener('input', calc);
+        actionCondition.addEventListener('input', calc);
+
+        document.querySelectorAll('.mod-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.type === 'checkbox') return;
+                const cb = this.querySelector('input[type="checkbox"]');
+                if (cb && !this.classList.contains('mod-disabled')) {
+                    cb.checked = !cb.checked;
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (cb.classList.contains('action-mod')) updateActionModifiers();
+                    if (cb.classList.contains('time-mod')) updateTimeModifiers();
+                    calc();
+                }
+            });
+        });
+        document.querySelectorAll('.mod-item input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('click', e => e.stopPropagation());
+            cb.addEventListener('change', function() {
+                if (this.classList.contains('action-mod')) updateActionModifiers();
+                if (this.classList.contains('time-mod')) updateTimeModifiers();
+                calc();
+            });
+        });
 
         // Инициализация
+        applyTheme(settings.theme);
+        manaFormulaInput.value = settings.manaFormula;
         updateProfileList();
         loadProfile(currentProfile);
-        // ... (остальной код без изменений)
+        updateBaseAvailability();
+        updateSpellMod();
+        updateBoostAvailability();
+        updateTimeGroupAvailability();
+        updateGroupSelect();
+        renderSavedSpells();
+        calc();
     })();
 </script>
 </body>
